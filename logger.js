@@ -78,11 +78,12 @@ class Logger {
   }
 }
 
-const loggers = ['server', 'automated'];
-
-module.exports = loggers.reduce((obj, name) => {
-  const l = new Logger(name);
-  return { ...obj, [name]: l.log.bind(l) };
-}, {});
+const loggers = [];
+function createLogger(folder) {
+  const l = new Logger(folder);
+  loggers.push(l);
+  return l.log.bind(l);
+}
+module.exports = createLogger;
 
 if (require.main === module) Logger.flattenLogs(process.argv[2]);

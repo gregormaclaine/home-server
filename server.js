@@ -4,7 +4,7 @@ const express = require('express');
 const app = express();
 
 const { PASSWORD, PORT } = require('./config');
-const { server: log } = require('./logger');
+const log = require('./logger')('server');
 
 function getLocalIPAddress() {
   return os.networkInterfaces().WiFi.find(c => c.family === 'IPv4').address;
