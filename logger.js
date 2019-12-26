@@ -1,14 +1,18 @@
 const moment = require('moment');
 const fs = require('fs');
-const util = require('util');
+const { promisify } = require('util');
 
-const readFile = util.promisify(fs.readFile);
-const writeFile = util.promisify(fs.writeFile)
-const deleteFile = util.promisify(fs.unlink);
+const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile)
+const deleteFile = promisify(fs.unlink);
+const readFolder = promisify(fs.readdir);
+
+const dateFormat = 'DD-MM-YY';
+const timeFormat = 'HH:mm:ss:SSS';
 
 class Logger {
   constructor(folder) {
-    this.date = Logger.getDate();
+    this.date = moment().format(dateFormat);
     this.logs = '';
     this.folder = folder;
 
@@ -18,64 +22,59 @@ class Logger {
 
   get logFile() { return `./logs/${this.folder}/${this.date}${this.version !== 1 ?  ` (${this.version})` : ''}.log`; }
 
-  static getDate() { return moment().format('DD-MM-YY'); }
-
   log(message) {
     console.log(message);
-    this.logs += `${moment().format('HH:mm')}: ${message}\n`;
+    this.logs += `[${moment().format(timeFormat)}] - ${message}\n`;
     this.updateFilename()
     this.record();
   }
 
   updateFilename() {
-    const currentDay = Logger.getDate();
+    const currentDay = moment().format(dateFormat);
     if (this.date === currentDay) return;
     this.date = currentDay;
     this.logs = '';
   }
 
-  record() { fs.writeFileSync(this.logFile, this.logs); }
+  record() { writeFile(this.logFile, this.logs); }
 
-  static flattenLogs(folder) {
+  static async flattenLogs(folder) {
     if (folder) return this.flattenLogFolder(folder);
-
-    fs.readdir('logs/', (err, folders) => {
-      if (err) return console.error(err); 
-      folders.forEach(folder => {
-        Logger.flattenLogFolder(folder)
-      });
+    
+    const folders = await readFolder('logs/').catch(e => console.error(e));
+    (folders || []).forEach(folder => {
+      Logger.flattenLogFolder(folder)
     });
   }
 
   static async flattenLogFolder(folder) {
-    fs.readdir('logs/' + folder, async (err, logs) => {
-      if (err) return console.error(err);
+    const logs = await readFolder('logs/' + folder).catch(e => console.error(e));
+    if (!logs) return;
 
-      const days = logs.reduce((obj, log) => {
-        const date = log.substr(0, 8);
-        return obj[date] ? { ...obj, [date]: obj[date].concat([ log ]) } : { ...obj, [date]: [ log ] }
-      }, {});
+    const days = logs.reduce((obj, log) => {
+      const date = log.substr(0, dateFormat.length);
+      return obj[date] ? { ...obj, [date]: obj[date].concat([ log ]) } : { ...obj, [date]: [ log ] }
+    }, {});
 
-      for (const day in days) {
-        const files = days[day];
+    for (const day in days) {
+      const files = days[day];
 
-        const lines = [];
-        await Promise.all(files.map(async file => {
-          const text = String(await readFile(`logs/${folder}/${file}`).catch(e => console.error(e)));
-          if (text) lines.push(...text.split('\n').filter(l => l));
-        }, []));
+      const lines = [];
+      await Promise.all(files.map(async file => {
+        const text = String(await readFile(`logs/${folder}/${file}`).catch(e => console.error(e)));
+        if (text) lines.push(...text.split('\n').filter(l => l));
+      }, []));
 
-        const sortedLines = lines.sort((a, b) => {
-          const ad = a.substr(0, 5);
-          const bd = b.substr(0, 5);
-          if (ad === bd) return 0;
-          return moment(ad, 'HH:mm').isBefore(moment(bd, 'HH:mm')) ? -1 : 1;
-        })
-        
-        await Promise.all(files.map(async file => await deleteFile(`logs/${folder}/${file}`)));
-        await writeFile(`logs/${folder}/${day}.log`, sortedLines.join('\n'));
-      }
-    });
+      const sortedLines = lines.sort((a, b) => {
+        const ad = a.substr(1, timeFormat.length);
+        const bd = b.substr(1, timeFormat.length);
+        if (ad === bd) return 0;
+        return moment(ad, timeFormat).isBefore(moment(bd, timeFormat)) ? -1 : 1;
+      })
+      
+      await Promise.all(files.map(async file => await deleteFile(`logs/${folder}/${file}`)));
+      await writeFile(`logs/${folder}/${day}.log`, sortedLines.join('\n'));
+    }
   }
 }
 
