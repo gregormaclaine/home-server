@@ -69,7 +69,7 @@ class Logger {
           const ad = a.substr(0, 5);
           const bd = b.substr(0, 5);
           if (ad === bd) return 0;
-          return moment(ad, 'DD-MM-YY').isBefore(moment(bd, 'DD-MM-YY')) ? -1 : 1;
+          return moment(ad, 'HH:mm').isBefore(moment(bd, 'HH:mm')) ? -1 : 1;
         })
         
         await Promise.all(files.map(async file => await deleteFile(`logs/${folder}/${file}`)));
