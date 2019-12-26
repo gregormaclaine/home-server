@@ -2,14 +2,15 @@ const moment = require('moment');
 const fs = require('fs');
 
 class Logger {
-  constructor() {
-    this.date = moment().format('dddd Do MMM YYYY');
+  constructor(folder) {
+    this.date = Logger.getDate();
     this.logs = '';
+    this.folder = folder;
   }
 
-  get logFile() {
-    return `./logs/${this.date}.log`;
-  }
+  get logFile() { return `./logs/${this.folder}/${this.date}.log`; }
+
+  static getDate() { return moment().format('DD-MM-YY'); }
 
   log(message) {
     console.log(message);
@@ -19,17 +20,18 @@ class Logger {
   }
 
   updateFilename() {
-    const currentDay = moment().format('dddd Do MMM YYYY')
+    const currentDay = Logger.getDate();
     if (this.date === currentDay) return;
     this.date = currentDay;
     this.logs = '';
   }
 
-  record() {
-    fs.writeFileSync(this.logFile, this.logs);
-  }
+  record() { fs.writeFileSync(this.logFile, this.logs); }
 }
 
-const logger = new Logger();
+const loggers = ['server', 'automated'];
 
-module.exports = logger.log.bind(logger);
+module.exports = loggers.reduce((obj, name) => {
+  const l = new Logger(name);
+  return { ...obj, [name]: l.log.bind(l) };
+}, {});
