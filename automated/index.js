@@ -10,6 +10,7 @@ class Automated {
   }
 
   start() {
+    log('Starting automated IP Address checker...');
     this.run();
     this.interval = setInterval(this.run.bind(this), 1000 * 60 * 5);
   }

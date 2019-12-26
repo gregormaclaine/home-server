@@ -16,6 +16,8 @@ class Logger {
     this.logs = '';
     this.folder = folder;
 
+    if (!fs.existsSync(`./logs/${this.folder}/`)) fs.mkdirSync(`./logs/${this.folder}/`);
+
     this.version = 1;
     while (fs.existsSync(this.logFile)) this.version++;
   }
