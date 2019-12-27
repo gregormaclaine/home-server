@@ -26,7 +26,7 @@ class Logger {
 
   log(message) {
     console.log(message);
-    this.logs += `[${moment().format(timeFormat)}] - ${message}\n`;
+    this.logs += `[${moment().format(timeFormat)}] - ${message.includes('Error') ? '⚠️  ' : ''}${message}\n`;
     this.updateFilename()
     this.record();
   }

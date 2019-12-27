@@ -1,18 +1,16 @@
-const os = require('os');
-const axios = require('axios');
 const express = require('express');
 const app = express();
 
 const { PASSWORD, PORT } = require('./config');
 const log = require('./logger')('server');
+const commands = require('./commands');
 
-function getLocalIPAddress() {
-  return os.networkInterfaces().WiFi.find(c => c.family === 'IPv4').address;
-}
-
-async function getPublicIPAddress() {
-  const { data: { ip } } = await axios.get('https://api.ipify.org?format=json');
-  return ip;
+function checkAuth(req, res, next) {
+  if (req.authenticated) {
+    next();
+  } else {
+    res.status(403).send('Error: Not authenticated');
+  }
 }
 
 app.listen(PORT);
@@ -24,11 +22,29 @@ app.use((req, res, next) => {
 });
 
 app.all('/', (req, res) => {
-  res.status(req.authenticated ? 200 : 403).send(req.authenticated ? 'My Server' : 'Error: Not authenticated');
+  res.status(200).send('My Server');
 });
 
-const start = async () => {
-  const borders = Array(30).fill('=').join('');
-  console.log(`${borders}\nServer is running on:\n   Local:    ${getLocalIPAddress()}:${PORT}\n   Public:   ${await getPublicIPAddress()}:${PORT}\nAwaiting messages...\n${borders}`);
-}
-start();
+app.all('/call/:command/:args*?', checkAuth, async (req, res) => {
+  const command = req.params.command;
+  const args = (req.params.args || '').split(',')
+  if (!commands[command]) {
+    log(`Handled Error: Could not find command '${command}'`);
+    return res.status(404).send(`Error: Could not find command '${command}'`)
+  };
+
+  log(`Running command '${command}' with args [${args}]`);
+
+  try {
+    const result = commands[command].constructor.name === "AsyncFunction" ? await commands[command](log, ...args) : commands[command](log, ...args);
+    if (!result) throw new Error('No result was returned...')
+    res.status(200).send(result);
+    log('Result sent');
+  } catch (e) {
+    log(`Caught ${e.name}: ${e.message}`);
+    console.error(e);
+    res.status(500).send('Error: Something went wrong...<br />Please check the logs');
+  }
+});
+
+module.exports = app;
