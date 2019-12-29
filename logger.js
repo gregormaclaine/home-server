@@ -12,14 +12,10 @@ const timeFormat = 'HH:mm:ss:SSS';
 
 class Logger {
   constructor(folder) {
-    this.date = moment().format(dateFormat);
-    this.logs = '';
     this.folder = folder;
-
     if (!fs.existsSync(`./logs/${this.folder}/`)) fs.mkdirSync(`./logs/${this.folder}/`);
 
-    this.version = 1;
-    while (fs.existsSync(this.logFile)) this.version++;
+    this.updateFilename();
   }
 
   get logFile() { return `./logs/${this.folder}/${this.date}${this.version !== 1 ?  ` (${this.version})` : ''}.log`; }
@@ -36,6 +32,8 @@ class Logger {
     if (this.date === currentDay) return;
     this.date = currentDay;
     this.logs = '';
+    this.version = 1;
+    while (fs.existsSync(this.logFile)) this.version++;
   }
 
   record() { writeFile(this.logFile, this.logs); }

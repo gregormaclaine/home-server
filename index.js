@@ -12,7 +12,7 @@ async function getPublicIPAddress() {
   return ip;
 }
 
-const app = require('./server');
+require('./server');
 
 const start = async () => {
   const borders = Array(30).fill('=').join('');
