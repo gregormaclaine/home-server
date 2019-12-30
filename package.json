@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon index.js",
     "build": "node index.js",
-    "auto-ip": "node automated/index.js",
+    "auto-ip": "node automated/index.js"
   },
   "repository": {
     "type": "git",
