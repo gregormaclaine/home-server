@@ -7,7 +7,6 @@
     "start": "nodemon index.js",
     "build": "node index.js",
     "auto-ip": "node automated/index.js",
-    "flattenlogs": "node logger.js"
   },
   "repository": {
     "type": "git",

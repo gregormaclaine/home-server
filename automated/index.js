@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const sendEmail = require('./emailer');
-const log = require('../logger')('automated');
+const { log } = require('../logger')('automated');
 
 class Automated {
   constructor() {

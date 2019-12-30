@@ -2,20 +2,23 @@ const express = require('express');
 const app = express();
 
 const { PASSWORD, PORT } = require('./config');
-const log = require('./logger')('server');
 
 function checkAuth(req, res, next) {
-  if (!req.authenticated) return res.status(403).json({ message: 'Error: Not authenticated' });
+  if (!req.authenticated) return res.status(206).json({ authenticated: false });
   next();
 }
 
 app.listen(PORT);
 app.use(require('cors')());
 
+const { log, logError } = require('./logger')('server')
+app.use((req, res, next) => { res.log = log; res.logError = logError; next() });
+
 app.use((req, res, next) => {
   req.authenticated = req.headers.password === PASSWORD;
-  const ip = req.connection.remoteAddress;
-  log(`${req.authenticated ? '✔️' : '❌'}  ${req.method}: '${req._parsedUrl.pathname}' from '${ip ? ip.slice(7) : 'Unknown'}'`);
+  const mip = req.connection.remoteAddress;
+  const ip = mip === '::1' ? 'localhost' : mip ? mip.slice(7) : 'Unknown';
+  res.log(`${req.authenticated ? '✔️' : '❌'}  ${req.method}: '${req.url}' from '${ip}'`);
   next();
 });
 
