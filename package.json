@@ -5,8 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "nodemon index.js",
-    "build": "node index.js",
-    "auto-ip": "node automated/index.js"
+    "auto-ip": "nodemon automated/index.js",
+    "cicd": "nodemon cicd/cicd.js"
   },
   "repository": {
     "type": "git",

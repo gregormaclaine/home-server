@@ -10,7 +10,7 @@ const timeFormat = 'HH:mm:ss:SSS';
 class Logger {
   constructor(folder) {
     this.folder = folder;
-    this.logs = '';
+    if (!fs.existsSync(`./logs/`)) fs.mkdirSync(`./logs/`);
     if (!fs.existsSync(`./logs/${this.folder}/`)) fs.mkdirSync(`./logs/${this.folder}/`);
   }
 
@@ -18,19 +18,16 @@ class Logger {
 
   log(message) {
     console.log(message);
-    this.logs += `[${moment().format(timeFormat)}] - ${message}\n`;
-    this.record();
+    this.record(`[${moment().format(timeFormat)}] - ${message}\n`);
   }
 
   error(e) {
     console.error(e);
-    this.logs += `[${moment().format(timeFormat)}] - ⚠️  ${e.name}: ${e.message}\n`;
-    this.record();
+    this.record(`[${moment().format(timeFormat)}] - ⚠️  ${e.name}: ${e.message}\n`);
   }
 
-  async record() {
-    await appendFile(this.logFile(), this.logs);
-    this.logs = '';
+  async record(message) {
+    await appendFile(this.logFile(), message);
   }
 
   // static async flattenLogs(folder) {
