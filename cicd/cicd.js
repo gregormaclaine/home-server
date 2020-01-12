@@ -37,9 +37,16 @@ class CICD {
     for (const { folder, newCommitCount, overview } of outOfDate) {
       log(`Folder: '${folder}' is ${newCommitCount} commits out of date - new commits span ${overview}`);
       await this.pullFolder(folder);
+      await this.npmInstallFolder(folder);
     }
     this.running = false;
     log('Automated cicd check finished');
+  }
+
+  async npmInstallFolder(folder) {
+    log(`Installing node-modules for folder: '${folder}'...`);
+    await spawn('C:\\Projects\\GServer\\home-server\\cicd\\npm-install.bat', folder).catch(e => logError(e));
+    log(`Folder: '${folder}' now has updated node-modules`);
   }
 
   async pullFolder(folder) {
@@ -48,9 +55,8 @@ class CICD {
     if (!output) return;
     const lines = output.split('\n').filter(l => l);
     lines.forEach((line, i) => setTimeout(() => log('(GIT) -> ' + line), i));
-    //setTimeout(() => log(`Folder: '${folder}' is now up to date`), lines.length);
     await new Promise(resolve => setTimeout(resolve, lines.length + 1));
-    log(`Folder: '${folder}' is now up to date`)
+    log(`Folder: '${folder}' is now up to date`);
   }
 
   async getStatus() {
