@@ -82,4 +82,4 @@ class CICD {
   }
 }
 
-new CICD(60 * 1000);
+new CICD(5 * 60 * 1000);
