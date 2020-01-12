@@ -39,6 +39,7 @@ class CICD {
       await this.pullFolder(folder);
     }
     this.running = false;
+    log('Automated cicd check finished');
   }
 
   async pullFolder(folder) {
