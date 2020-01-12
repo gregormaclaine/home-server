@@ -47,7 +47,7 @@ class CICD {
     const output = await spawn('C:\\Projects\\GServer\\home-server\\cicd\\git-pull.bat', folder).catch(e => logError(e));
     if (!output) return;
     const lines = output.split('\n').filter(l => l);
-    lines.forEach((line, i) => setTimeout(() => log(line), i));
+    lines.forEach((line, i) => setTimeout(() => log('(GIT) -> ' + line), i));
     //setTimeout(() => log(`Folder: '${folder}' is now up to date`), lines.length);
     await new Promise(resolve => setTimeout(resolve, lines.length + 1));
     log(`Folder: '${folder}' is now up to date`)
