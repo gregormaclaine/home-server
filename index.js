@@ -4,7 +4,8 @@ const axios = require('axios');
 const { PORT } = require('./config');
 
 function getLocalIPAddress() {
-  return os.networkInterfaces().WiFi.find(c => c.family === 'IPv4').address;
+  const interface = os.networkInterfaces().WiFi || os.networkInterfaces().Ethernet;
+  return interface.find(c => c.family === 'IPv4').address;
 }
 
 async function getPublicIPAddress() {
