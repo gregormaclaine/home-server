@@ -16,6 +16,8 @@ function spawn(...args) {
 class CICD {
   constructor(timeout) {
     log('Starting up CICD...');
+    this.running = false;
+    this.runAttempts = 0;
 
     this.run();
     this.interval = setInterval(this.run.bind(this), timeout);
@@ -23,21 +25,31 @@ class CICD {
 
   async run() {
     log('Running automated cicd check...');
+    if (this.runAttempts >= 5) { this.runAttempts = 0; this.running = false; log(`Existing process warning bypassed - too many prevented runs...`); }
+    else if (this.running) return log(`Run prevented due to existing process - Failed Attempts: ${++this.runAttempts}`);
+    this.running = true;
+
     const gitStatus = await this.getStatus();
     console.table(gitStatus);
     const outOfDate = gitStatus.filter(s => !s.upToDate);
-    if (outOfDate.length === 0) return log('All folders are up to date')
+    if (outOfDate.length === 0) { this.running = false; return log('All folders are up to date'); }
     log(`The following folders are out of date: ${outOfDate.map(s => s.folder).join(', ')}`);
     for (const { folder, newCommitCount, overview } of outOfDate) {
       log(`Folder: '${folder}' is ${newCommitCount} commits out of date - new commits span ${overview}`);
       await this.pullFolder(folder);
     }
+    this.running = false;
   }
 
   async pullFolder(folder) {
     log(`Pulling folder: '${folder}'...`);
     const output = await spawn('C:\\Projects\\GServer\\home-server\\cicd\\git-pull.bat', folder).catch(e => logError(e));
-    if (output) output.split('\n').filter(l => l).forEach((line, i) => setTimeout(() => log(line), i));
+    if (!output) return;
+    const lines = output.split('\n').filter(l => l);
+    lines.forEach((line, i) => setTimeout(() => log(line), i));
+    //setTimeout(() => log(`Folder: '${folder}' is now up to date`), lines.length);
+    await new Promise(resolve => setTimeout(resolve, lines.length + 1));
+    log(`Folder: '${folder}' is now up to date`)
   }
 
   async getStatus() {
