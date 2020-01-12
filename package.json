@@ -1,8 +1,8 @@
 {
-  "name": "server",
+  "name": "home-server",
   "version": "1.0.0",
-  "description": "A general-purpose server",
-  "main": "server.js",
+  "description": "A general-purpose server for home",
+  "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
     "automated": "nodemon automated/bot.js"
