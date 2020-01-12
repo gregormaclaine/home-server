@@ -1,23 +1,40 @@
 const axios = require('axios');
+const nodemailer = require('nodemailer');
 
-const sendEmail = require('./emailer');
-const { log } = require('../logger')('automated');
+const { log } = require('../../logger')('public-ip');
+const { EMAIL, EMAIL_PASSWORD } = require('../../config');
 
-class Automated {
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: EMAIL,
+    pass: EMAIL_PASSWORD
+  }
+});
+
+const sendEmail = (subject, text, callback) => {
+  transporter.sendMail({
+    from: EMAIL,
+    to: EMAIL,
+    subject,
+    html: text
+  }, err => {
+    if (err) return console.error(err);
+    callback();
+  });
+}
+
+class PublicIP {
   constructor() {
     this.ip = null;
-    this.interval = null;
-  }
+    this.log = log;
 
-  start() {
     log('Starting automated IP Address checker...');
-    this.run();
-    this.interval = setInterval(this.run.bind(this), 1000 * 60 * 5);
   }
 
   async run() {
     console.log('');
-    log('Beginning sequence...');
+    log('Beginning Public-IP sequence...');
     const previousIP = this.ip;
     await this.updateIP();
     if (previousIP !== this.ip) this.sendUpdate(previousIP);
@@ -40,5 +57,4 @@ class Automated {
   }
 }
 
-const runner = new Automated();
-runner.start();
+module.exports = { task: new PublicIP(), timeout: 5 * 60 * 1000 };

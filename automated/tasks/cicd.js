@@ -1,6 +1,6 @@
 const { spawn: spawnSync } = require('child_process');
 
-const { log, logError } = require('../logger')('cicd');
+const { log, logError } = require('../../logger')('cicd');
 
 function spawn(...args) {
   return new Promise((resolve, reject) => {
@@ -14,44 +14,37 @@ function spawn(...args) {
 }
 
 class CICD {
-  constructor(timeout) {
+  constructor() {
+    this.log = log;
     log('Starting up CICD...');
     this.running = false;
     this.runAttempts = 0;
-
-    this.run();
-    this.interval = setInterval(this.run.bind(this), timeout);
   }
 
   async run() {
     log('Running automated cicd check...');
-    if (this.runAttempts >= 5) { this.runAttempts = 0; this.running = false; log(`Existing process warning bypassed - too many prevented runs...`); }
-    else if (this.running) return log(`Run prevented due to existing process - Failed Attempts: ${++this.runAttempts}`);
-    this.running = true;
-
     const gitStatus = await this.getStatus();
     console.table(gitStatus);
     const outOfDate = gitStatus.filter(s => !s.upToDate);
-    if (outOfDate.length === 0) { this.running = false; return log('All folders are up to date'); }
+    if (outOfDate.length === 0) return log('All folders are up to date');
     log(`The following folders are out of date: ${outOfDate.map(s => s.folder).join(', ')}`);
     for (const { folder, newCommitCount, overview } of outOfDate) {
       log(`Folder: '${folder}' is ${newCommitCount} commits out of date - new commits span ${overview}`);
       await this.pullFolder(folder);
       await this.npmInstallFolder(folder);
     }
-    this.running = false;
     log('Automated cicd check finished');
   }
 
   async npmInstallFolder(folder) {
     log(`Installing node-modules for folder: '${folder}'...`);
-    await spawn('C:\\Projects\\GServer\\home-server\\cicd\\npm-install.bat', folder).catch(e => logError(e));
+    await spawn('C:\\Projects\\GServer\\home-server\\automated\\scripts\\npm-install.bat', folder).catch(e => logError(e));
     log(`Folder: '${folder}' now has updated node-modules`);
   }
 
   async pullFolder(folder) {
     log(`Pulling folder: '${folder}'...`);
-    const output = await spawn('C:\\Projects\\GServer\\home-server\\cicd\\git-pull.bat', folder).catch(e => logError(e));
+    const output = await spawn('C:\\Projects\\GServer\\home-server\\automated\\scripts\\git-pull.bat', folder).catch(e => logError(e));
     if (!output) return;
     const lines = output.split('\n').filter(l => l);
     lines.forEach((line, i) => setTimeout(() => log('(GIT) -> ' + line), i));
@@ -65,7 +58,7 @@ class CICD {
     await Promise.all(['home-server', 'home-client'].map(async folder => {
 
       log(`Getting status of folder: '${folder}'...`);
-      const output = await spawn('C:\\Projects\\GServer\\home-server\\cicd\\git-fetch.bat', folder).catch(e => logError(e));
+      const output = await spawn('C:\\Projects\\GServer\\home-server\\automated\\scripts\\git-fetch.bat', folder).catch(e => logError(e));
       if (!output && output !== '') return;
       const lines = output.split('\n').filter(l => l);
       result.push(lines.length === 0 ? { folder, upToDate: true } : {
@@ -82,4 +75,4 @@ class CICD {
   }
 }
 
-new CICD(5 * 60 * 1000);
+module.exports = { task: new CICD(), timeout: 5 * 60 * 1000 };
